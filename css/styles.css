@@ -1,0 +1,157 @@
+/* CortePro DIY - Workshop & Modern App Styles */
+
+:root {
+  --wood-warm: #d97706;
+  --wood-dark: #78350f;
+  --saw-kerf: #ef4444;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+/* Canvas Container */
+.canvas-viewport {
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  background-image: radial-gradient(rgba(156, 163, 175, 0.15) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.canvas-viewport:active {
+  cursor: grabbing;
+}
+
+/* Wood Grain Badge Accent */
+.wood-gradient {
+  background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%);
+}
+
+.wood-gradient-dark {
+  background: linear-gradient(135deg, #451a03 0%, #78350f 50%, #92400e 100%);
+}
+
+/* Highlight animation for piece selection */
+@keyframes piecePulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); }
+  70% { transform: scale(1.02); box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.piece-row-highlight {
+  animation: piecePulse 1.2s ease infinite;
+  border-color: #f59e0b !important;
+  background-color: rgba(245, 158, 11, 0.12) !important;
+}
+
+/* Tooltip floating card */
+.canvas-tooltip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 50;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  backdrop-filter: blur(8px);
+}
+
+/* ==========================================================================
+   PRINT STYLES FOR WORKSHOP / PDF EXPORT
+   ========================================================================== */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+  }
+
+  /* Ocultar elementos de UI no imprimibles */
+  .no-print,
+  nav,
+  aside,
+  header,
+  .btn-action,
+  .modal-container,
+  .zoom-controls,
+  .sheet-navigation-bar {
+    display: none !important;
+  }
+
+  /* Mostrar sección de impresión */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Ajustar contenedor principal para impresión continua y limpia */
+  main, .main-content-container {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-page {
+    page-break-after: always;
+    break-after: page;
+    padding: 1.5cm 1cm;
+  }
+
+  .print-header {
+    border-bottom: 2px solid #000000;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 10pt;
+  }
+
+  .print-table th,
+  .print-table td {
+    border: 1px solid #333333;
+    padding: 6px 8px;
+    text-align: left;
+  }
+
+  .print-table th {
+    background-color: #f3f4f6 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-checkbox {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid #000000;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .print-sheet-image {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #000000;
+    margin: 12px 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

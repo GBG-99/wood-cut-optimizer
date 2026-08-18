@@ -1,0 +1,15 @@
+# Logs y temporales
+*.log
+.DS_Store
+Thumbs.db
+test_*.py
+test_*.json
+set_imperial.html
+
+# Screenshots temporales de desarrollo (dejamos screenshot_final.png para el README)
+screenshot.png
+screenshot2.png
+screenshot3.png
+screenshot_imperial.png
+screenshot_imperial2.png
+screenshot_v2.png

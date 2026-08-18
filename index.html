@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CortePro DIY - Optimizador de Corte de Tableros 2D</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            wood: {
+              50: '#fdf8f4',
+              100: '#f9eee4',
+              200: '#f2dcbf',
+              300: '#e8c494',
+              400: '#dca664',
+              500: '#d97706',
+              600: '#b45309',
+              700: '#92400e',
+              800: '#78350f',
+              900: '#451a03',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Estilos de Taller y reglas de Impresión -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
+
+  <!-- ========================================== -->
+  <!-- BARRA DE NAVEGACIÓN SUPERIOR               -->
+  <!-- ========================================== -->
+  <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-sm no-print sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl wood-gradient flex items-center justify-center text-white text-xl shadow-md select-none">
+        🪚
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-extrabold text-base tracking-tight text-slate-900 dark:text-white">
+            CortePro <span class="text-amber-500 font-bold text-xs uppercase px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950/60 rounded">DIY</span>
+          </h1>
+          <span id="save-indicator" class="text-[11px] text-emerald-500 font-medium opacity-0 transition-opacity duration-300 flex items-center gap-1">
+            <span>●</span> Guardado
+          </span>
+        </div>
+        <input type="text" id="project-name-input" value="Mi Proyecto de Corte" title="Haz clic para editar el nombre del proyecto"
+          class="text-xs text-slate-500 dark:text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-amber-500 focus:outline-none w-52 font-medium" />
+      </div>
+    </div>
+
+    <!-- TOGGLE DE UNIDADES VISUAL Y DESTACADO -->
+    <div class="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner">
+      <button type="button" id="unit-btn-metric" class="py-1.5 px-3 rounded-lg font-extrabold text-xs bg-amber-500 text-white shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+        <span>📏</span> Métrico (mm)
+      </button>
+      <button type="button" id="unit-btn-imperial" class="py-1.5 px-3 rounded-lg font-medium text-xs text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+        <span>🇺🇸</span> Imperial (in)
+      </button>
+    </div>
+
+    <!-- ACCIONES PRINCIPALES: NUEVO PROYECTO, PRESETS, IMPORT/EXPORT, IMPRIMIR -->
+    <div class="flex items-center gap-2">
+      <button type="button" id="btn-new-project" class="px-3.5 py-1.5 text-xs font-extrabold rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-sm transition-all flex items-center gap-1.5 cursor-pointer" title="Crear un nuevo proyecto en blanco desde cero">
+        <span class="text-sm">➕</span> <span>Nuevo Proyecto (Desde 0)</span>
+      </button>
+
+      <button type="button" id="btn-open-presets" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/60 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors flex items-center gap-1.5 cursor-pointer">
+        <span>🗂️</span> <span class="hidden md:inline">Ejemplos</span>
+      </button>
+
+      <button type="button" id="btn-open-import-export" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center gap-1.5 cursor-pointer">
+        <span>🔄</span> <span class="hidden lg:inline">Importar / Exportar</span>
+      </button>
+
+      <button type="button" id="btn-print" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer" title="Imprimir plano de corte de taller en PDF">
+        <span>🖨️</span> <span class="hidden sm:inline">Imprimir / PDF</span>
+      </button>
+
+      <button type="button" id="btn-toggle-theme" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-pointer" title="Cambiar tema Claro / Oscuro">
+        <span class="dark:hidden">🌙</span>
+        <span class="hidden dark:inline">☀️</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- CONTENIDO PRINCIPAL                        -->
+  <!-- ========================================== -->
+  <main class="flex-1 flex flex-col lg:flex-row overflow-hidden relative main-content-container">
+
+    <!-- PANEL LATERAL IZQUIERDO: Tableros, Despiece y Ajustes -->
+    <aside class="w-full lg:w-[490px] xl:w-[530px] bg-white dark:bg-slate-800/95 border-r border-slate-200 dark:border-slate-700 flex flex-col h-auto lg:h-[calc(100vh-61px)] overflow-y-auto no-print shadow-sm">
+      
+      <!-- SECCIÓN 1: TABLEROS DE ORIGEN (STOCK) -->
+      <section class="p-4 border-b border-slate-200 dark:border-slate-700">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🪵</span>
+            <h2 class="font-bold text-sm text-slate-800 dark:text-slate-100">Tableros de Origen (Stock)</h2>
+          </div>
+          <button type="button" id="btn-add-stock" class="text-xs font-semibold px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-md transition-colors flex items-center gap-1 cursor-pointer">
+            <span>+</span> Añadir Tablero
+          </button>
+        </div>
+
+        <!-- Presets rápidos de tableros comerciales según sistema de unidades activo -->
+        <div class="mb-3">
+          <label class="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">Medidas comerciales habituales:</label>
+          <select id="stock-presets-select" class="w-full p-2 text-xs rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 focus:outline-none focus:border-amber-500">
+            <!-- Rellenado dinámico según Métrico/Imperial -->
+          </select>
+        </div>
+
+        <div id="stock-list-container" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+          <!-- Renderizado dinámico desde app.js -->
+        </div>
+      </section>
+
+      <!-- SECCIÓN 2: LISTA DE DESPIECE (PIEZAS REQUERIDAS) -->
+      <section class="p-4 border-b border-slate-200 dark:border-slate-700 flex-1 flex flex-col min-h-[320px]">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-base">📐</span>
+            <h2 class="font-bold text-sm text-slate-800 dark:text-slate-100">Lista de Despiece</h2>
+            <span id="pieces-count-badge" class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+              0 piezas
+            </span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button type="button" id="btn-open-bulk-add" class="text-xs font-semibold px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md transition-colors cursor-pointer" title="Pegar lista de piezas desde Excel o texto">
+              📋 Pegar Lote
+            </button>
+            <button type="button" id="btn-add-piece" class="text-xs font-semibold px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-md transition-colors flex items-center gap-1 cursor-pointer">
+              <span>+</span> Añadir
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto flex-1 border border-slate-200 dark:border-slate-700 rounded-lg max-h-[340px] overflow-y-auto">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-[11px] sticky top-0 z-10 uppercase tracking-wider">
+              <tr>
+                <th class="p-2 text-center w-7">Color</th>
+                <th class="p-2">Pieza</th>
+                <th class="p-2 text-center w-16">Largo (<span class="unit-label-text">mm</span>)</th>
+                <th class="p-2 text-center w-16">Ancho (<span class="unit-label-text">mm</span>)</th>
+                <th class="p-2 text-center w-12">Cant.</th>
+                <th class="p-2 text-center w-12" title="Marcar para permitir girar 90°. Desmarcar si la pieza debe respetar la veta de la madera">Rotar 90°</th>
+                <th class="p-2 text-right w-14"></th>
+              </tr>
+            </thead>
+            <tbody id="pieces-list-container" class="divide-y divide-slate-100 dark:divide-slate-800">
+              <!-- Renderizado dinámico desde app.js -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 3: CONFIGURACIÓN DE CORTE Y BOTÓN OPTIMIZAR -->
+      <section class="p-4 bg-slate-50 dark:bg-slate-900/70 border-t border-slate-200 dark:border-slate-700">
+        <h3 class="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1">
+          <span>⚙️</span> Parámetros de Corte de Taller
+        </h3>
+
+        <div class="grid grid-cols-2 gap-3 text-xs mb-3">
+          <div>
+            <label class="font-medium text-slate-700 dark:text-slate-300 block mb-1" title="Grosor del disco de sierra que se pierde en cada corte">
+              Grosor Sierra (Kerf):
+            </label>
+            <div class="flex items-center gap-1.5">
+              <input type="number" id="setting-kerf" value="3" min="0" max="15" step="0.1"
+                class="w-full p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono font-bold text-center" />
+              <span class="text-slate-500 font-mono unit-label-text">mm</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="font-medium text-slate-700 dark:text-slate-300 block mb-1" title="Margen perimetral para sanear bordes defectuosos del tablero">
+              Saneado Perimetral:
+            </label>
+            <div class="flex items-center gap-1.5">
+              <input type="number" id="setting-margin" value="10" min="0" max="50" step="1"
+                class="w-full p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono font-bold text-center" />
+              <span class="text-slate-500 font-mono unit-label-text">mm</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="font-medium text-xs text-slate-700 dark:text-slate-300 block mb-1">
+            Estrategia de Empaquetado:
+          </label>
+          <select id="setting-algorithm" class="w-full p-2 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 focus:outline-none focus:border-amber-500 font-medium">
+            <option value="auto">🌟 Automático (Evalúa Guillotina y MaxRects)</option>
+            <option value="guillotine">🪚 Guillotina (Cortes pasantes para Sierra de Mesa)</option>
+            <option value="maxrects">📐 MaxRects (Máxima Densidad / Caladora o CNC)</option>
+          </select>
+        </div>
+
+        <button type="button" id="btn-optimize" class="w-full py-3.5 px-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-extrabold rounded-xl shadow-lg hover:shadow-amber-500/25 transition-all text-sm flex items-center justify-center gap-2 select-none cursor-pointer">
+          <span>✨</span> CALCULAR DISTRIBUCIÓN ÓPTIMA
+        </button>
+      </section>
+    </aside>
+
+    <!-- ÁREA PRINCIPAL DERECHA: Métricas, Visualizador Canvas e Informes -->
+    <section class="flex-1 flex flex-col h-auto lg:h-[calc(100vh-61px)] overflow-y-auto bg-slate-100 dark:bg-slate-900/90 p-3 sm:p-5 gap-4">
+      
+      <!-- BARRA SUPERIOR DE MÉTRICAS (KPIs) -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 no-print">
+        <div class="p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col">
+          <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Aprovechamiento Útil</span>
+          <div class="flex items-baseline gap-2 mt-1">
+            <span id="stat-efficiency" class="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">0%</span>
+          </div>
+        </div>
+
+        <div class="p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col">
+          <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Tableros Necesarios</span>
+          <div class="flex items-baseline gap-2 mt-1">
+            <span id="stat-sheets-count" class="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">0</span>
+            <span class="text-xs text-slate-400">unidad(es)</span>
+          </div>
+        </div>
+
+        <div class="p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col">
+          <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Madera Desperdiciada</span>
+          <div class="flex items-baseline gap-2 mt-1">
+            <span id="stat-waste-area" class="text-2xl font-black text-slate-700 dark:text-slate-300 font-mono">0 m²</span>
+          </div>
+        </div>
+
+        <div class="p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col">
+          <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Longitud de Corte Total</span>
+          <div class="flex items-baseline gap-2 mt-1">
+            <span id="stat-linear-meters" class="text-2xl font-black text-blue-600 dark:text-blue-400 font-mono">0 m</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AVISO PIEZAS NO COLOCADAS SI EXISTEN -->
+      <div id="unplaced-warning-container" class="hidden no-print"></div>
+
+      <!-- CONTENEDOR DEL VISUALIZADOR CANVAS -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden no-print">
+        
+        <!-- BARRA DE HERRAMIENTAS DEL TABLERO -->
+        <div class="p-3 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2">
+          <!-- Selector de Tableros -->
+          <div class="flex items-center gap-2">
+            <button type="button" id="btn-prev-sheet" class="p-1.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+              ◀
+            </button>
+            <span id="sheet-counter-badge" class="px-2.5 py-1 rounded-md bg-amber-500 text-white font-bold text-xs">
+              Tablero 1 de 1
+            </span>
+            <button type="button" id="btn-next-sheet" class="p-1.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+              ▶
+            </button>
+            <span id="sheet-title-display" class="text-xs font-semibold text-slate-700 dark:text-slate-300 hidden sm:inline ml-2">
+              Tablero Estándar
+            </span>
+          </div>
+
+          <!-- Leyenda en Toolbar y Controles de Canvas -->
+          <div class="flex items-center flex-wrap gap-2">
+            <div class="hidden md:flex items-center gap-3 px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-700/60 text-[11px] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 select-none">
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-amber-500 inline-block"></span> Útil</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-slate-400/40 border border-slate-400 inline-block"></span> Retal</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-red-500 inline-block"></span> Sierra</span>
+            </div>
+
+            <select id="canvas-theme-select" class="text-xs p-1.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 focus:outline-none font-medium cursor-pointer">
+              <option value="wood">🎨 Madera Cálida</option>
+              <option value="blueprint">📐 Plano Técnico</option>
+              <option value="contrast">⚡ Alto Contraste</option>
+            </select>
+
+            <div class="flex items-center bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 p-0.5">
+              <button type="button" id="btn-zoom-in" class="px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-600 rounded text-xs font-bold cursor-pointer" title="Acercar zoom">＋</button>
+              <button type="button" id="btn-zoom-out" class="px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-600 rounded text-xs font-bold cursor-pointer" title="Alejar zoom">－</button>
+              <button type="button" id="btn-fit-screen" class="px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-600 rounded text-xs cursor-pointer" title="Ajustar al lienzo">⛶</button>
+            </div>
+
+            <button type="button" id="btn-export-png" class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1 cursor-pointer" title="Descargar imagen PNG en alta resolución">
+              <span>📷</span> PNG
+            </button>
+          </div>
+        </div>
+
+        <!-- LIENZO CANVAS INTERACTIVO -->
+        <div class="relative w-full h-[400px] sm:h-[460px] xl:h-[500px] bg-slate-200 dark:bg-slate-950 overflow-hidden canvas-viewport">
+          <canvas id="cutting-canvas" class="block w-full h-full"></canvas>
+
+          <!-- Floating Tooltip -->
+          <div id="canvas-tooltip" class="canvas-tooltip hidden p-2.5 rounded-xl bg-slate-900/95 text-white shadow-2xl border border-slate-700 text-xs pointer-events-none">
+          </div>
+
+          <!-- Badge con información de heurística ejecutada -->
+          <div class="absolute bottom-3 right-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-md text-[10px] text-slate-500 dark:text-slate-400 font-mono z-10">
+            Motor: <span id="stat-algorithm-used" class="font-semibold text-amber-500">Auto</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANELES DE INFORMACIÓN Y TALLER: Piezas del tablero, Retales y Secuencia -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pb-8 no-print">
+        
+        <!-- 1. Piezas en este tablero -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm flex flex-col">
+          <h3 class="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+            <span>📋</span> Piezas de este Tablero
+          </h3>
+          <div class="flex-1 overflow-y-auto max-h-56">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 text-[10px] uppercase">
+                <tr>
+                  <th class="p-1.5 text-center">#</th>
+                  <th class="p-1.5">Pieza</th>
+                  <th class="p-1.5 text-center">Medidas</th>
+                  <th class="p-1.5 text-center">X, Y</th>
+                  <th class="p-1.5 text-center">Giro</th>
+                </tr>
+              </thead>
+              <tbody id="sheet-pieces-tbody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                <!-- Renderizado dinámico -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 2. Retales aprovechables -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm flex flex-col">
+          <h3 class="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+            <span>🪵</span> Retales para Guardar en Taller
+          </h3>
+          <div id="offcuts-cards-container" class="flex-1 overflow-y-auto max-h-56 space-y-2">
+            <!-- Renderizado dinámico -->
+          </div>
+        </div>
+
+        <!-- 3. Secuencia de cortes sugerida -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm flex flex-col">
+          <h3 class="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+            <span>🪚</span> Guía de Corte Paso a Paso
+          </h3>
+          <div id="sequence-steps-container" class="flex-1 overflow-y-auto max-h-56">
+            <!-- Renderizado dinámico -->
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL: PROYECTOS PRESET                    -->
+  <!-- ========================================== -->
+  <div id="modal-presets" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 max-w-2xl w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+          <span>🗂️</span> Proyectos Predefinidos de Carpintería y DIY
+        </h3>
+        <button type="button" id="btn-close-presets" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+        Selecciona un proyecto común para cargar automáticamente su lista de despiece y dimensiones de tablero:
+      </p>
+      <div id="presets-list-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
+        <!-- Renderizado dinámico -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: IMPORTAR / EXPORTAR JSON & CSV      -->
+  <!-- ========================================== -->
+  <div id="modal-import-export" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 max-w-xl w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+          <span>🔄</span> Importar / Exportar Datos
+        </h3>
+        <button type="button" id="btn-close-import-export" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="font-semibold text-xs text-slate-700 dark:text-slate-300 block mb-1">Exportar a Archivo:</label>
+          <div class="flex gap-2">
+            <button type="button" id="btn-download-json" class="flex-1 py-2 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-600 text-xs font-semibold rounded-lg transition-colors cursor-pointer">
+              💾 Descargar JSON Completo
+            </button>
+            <button type="button" id="btn-export-csv" class="flex-1 py-2 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-600 text-xs font-semibold rounded-lg transition-colors cursor-pointer">
+              📊 Exportar Despiece en CSV
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="font-semibold text-xs text-slate-700 dark:text-slate-300 block mb-1">Importar / Pegar JSON del Proyecto:</label>
+          <textarea id="export-json-area" rows="6" class="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-[11px] text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500"></textarea>
+        </div>
+
+        <button type="button" id="btn-apply-import-json" class="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer">
+          Cargar Proyecto desde JSON
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: PEGADO MASIVO DE PIEZAS (BULK ADD)  -->
+  <!-- ========================================== -->
+  <div id="modal-bulk-add" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 max-w-xl w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+          <span>📋</span> Pegar Lista de Despiece en Lote
+        </h3>
+        <button type="button" id="btn-close-bulk-add" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
+      </div>
+
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">
+        Pega filas copiadas desde Excel, Google Sheets o texto plano. Formato aceptado:<br>
+        <code class="text-amber-500 font-mono text-[11px]">Nombre_Pieza [tab/coma] Largo [tab/coma] Ancho [tab/coma] Cantidad [tab/coma] Rotar(1/0)</code>
+      </p>
+
+      <textarea id="bulk-add-textarea" rows="7" placeholder="Lateral 800 300 2 0&#10;Balda 764 280 4 1&#10;Puerta 750 395 2 0"
+        class="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500 mb-3"></textarea>
+
+      <div class="flex items-center justify-between mb-4 text-xs text-slate-700 dark:text-slate-300">
+        <div class="flex items-center gap-4">
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" name="bulk-mode" value="append" checked class="text-amber-500" />
+            <span>Añadir a las existentes</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" name="bulk-mode" value="replace" class="text-amber-500" />
+            <span>Reemplazar lista actual</span>
+          </label>
+        </div>
+      </div>
+
+      <button type="button" id="btn-process-bulk-add" class="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer">
+        Procesar e Importar Piezas
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SECCIÓN OCULTA PARA IMPRESIÓN Y PDF        -->
+  <!-- ========================================== -->
+  <div id="print-section" class="print-only hidden"></div>
+
+  <!-- Scripts ES Modules -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
